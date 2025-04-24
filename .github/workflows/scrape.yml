@@ -1,0 +1,42 @@
+name: Scrape SeLoger
+
+on:
+  workflow_dispatch:
+    inputs:
+      name:
+        description: "Nom de l'agence"
+        required: true
+        default: "Expertim immobilier"
+      slug:
+        description: "Ville slug (ex: versailles-78000)"
+        required: true
+        default: "versailles-78000"
+  schedule:
+    - cron: '0 6 * * *'  # tous les jours à 6h UTC
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Run scraper
+        run: |
+          node scraper.js --name "${{ github.event.inputs.name }}" --slug "${{ github.event.inputs.slug }}" \
+            | tee result.json
+
+      - name: Upload result
+        uses: actions/upload-artifact@v3
+        with:
+          name: scrape-result
+          path: result.json
