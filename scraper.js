@@ -10,38 +10,45 @@ if (!nomAgence || !villeSlug) {
 }
 
 (async () => {
+  console.log(`🔍 Debut du scraping pour "${nomAgence}" dans "${villeSlug}"`);
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage();
 
-  // 1) Aller sur l'annuaire
   const annuaireUrl = `https://www.seloger.com/annuaire/${villeSlug}/`;
-  await page.goto(annuaireUrl);
+  console.log(`→ Navigation vers : ${annuaireUrl}`);
+  await page.goto(annuaireUrl, { timeout: 60000 });
   await page.waitForTimeout(3000);
 
-  // 2) Récupérer les liens d'agences
+  // 1) Récupération des liens d'agences
   const liens = await page.$$eval("a.c-pa-link", els =>
     els.map(el => ({ nom: el.textContent.trim(), url: el.href }))
   );
+  console.log(`✨ Liens trouvés : ${liens.length}`);
+  console.log("🔗 Premiers liens :", liens.slice(0, 3));
 
-  // 3) Trouver celle qui matche
+  // 2) Recherche de l'agence
   const agence = liens.find(a =>
     a.nom.toLowerCase().includes(nomAgence.toLowerCase())
   );
+  console.log("🏷️ Nom recherché :", nomAgence);
+  console.log("🔎 Agency match :", agence);
 
   let nbAnnonces = 0;
   if (agence) {
-    // 4) Visiter la page agence
-    await page.goto(agence.url);
+    console.log(`→ Visite de ${agence.url}`);
+    await page.goto(agence.url, { timeout: 60000 });
     await page.waitForTimeout(2000);
     const html = await page.content();
     const match = html.match(/Biens en vente\s*\((\d+)\)/);
     nbAnnonces = match ? parseInt(match[1], 10) : 0;
+    console.log(`✅ Nombre d'annonces extrait : ${nbAnnonces}`);
+  } else {
+    console.log("⚠️ Aucune agence n'a matché le nom recherché");
   }
 
   await browser.close();
 
-  // 5) Afficher le résultat JSON
-  console.log(JSON.stringify({
+  console.log("📊 Résultat final :", JSON.stringify({
     nom: agence ? agence.nom : null,
     url: agence ? agence.url : null,
     nbAnnonces
