@@ -12,7 +12,7 @@ on:
         required: true
         default: "versailles-78000"
   schedule:
-    - cron: '0 6 * * *'  # tous les jours à 6h UTC
+    - cron: '0 6 * * *'
 
 jobs:
   scrape:
@@ -25,18 +25,12 @@ jobs:
         with:
           node-version: '18'
 
-      - name: Install dependencies
+      - name: Install dependencies & browsers
         run: |
           npm ci
           npx playwright install --with-deps chromium
 
-      - name: Run scraper
+      - name: Run scraper and show result
         run: |
-          node scraper.js --name "${{ github.event.inputs.name }}" --slug "${{ github.event.inputs.slug }}" \
-            | tee result.json
-
-      - name: Upload result
-        uses: actions/upload-artifact@v3
-        with:
-          name: scrape-result
-          path: result.json
+          echo "📊 Résultat du scraping :" 
+          node scraper.js --name "${{ github.event.inputs.name }}" --slug "${{ github.event.inputs.slug }}"
