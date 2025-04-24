@@ -1,15 +1,12 @@
 {
   "name": "seloger-puppeteer-api",
   "version": "1.0.0",
-  "description": "Scraper SeLoger via Puppeteer et API Express",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
     "express": "^4.18.2",
-    "puppeteer": "^21.3.8",
-    "re2": "^1.18.0"
-}
-
+    "playwright": "^1.43.0"
+  }
 }
