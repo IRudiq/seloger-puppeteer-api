@@ -1,63 +1,69 @@
 const express = require("express");
-const puppeteer = require("puppeteer");
+const { chromium } = require("playwright");
+const re = require("re2");
 
 const app = express();
 app.use(express.json());
 
 app.post("/seloger", async (req, res) => {
   const { nom_agence, ville_slug } = req.body;
+
   if (!nom_agence || !ville_slug) {
-    return res.status(400).json({ error: "nom_agence et ville_slug requis" });
+    return res.status(400).json({ error: "nom_agence ou ville_slug manquant" });
   }
 
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: ['--no-sandbox']
-  });
-  const page = await browser.newPage();
+  const url = `https://www.seloger.com/annuaire/${ville_slug}/`;
 
+  let browser;
   try {
-    const url = `https://www.seloger.com/annuaire/${ville_slug}/`;
+    browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+
     await page.goto(url, { timeout: 60000 });
     await page.waitForTimeout(3000);
-    const liens = await page.$$eval("a.c-pa-link", links =>
-      links.map(link => ({
-        nom: link.textContent.trim(),
-        url: link.href
-      }))
-    );
 
-    const agence = liens.find(ag => ag.nom.toLowerCase().includes(nom_agence.toLowerCase()));
-    if (!agence) {
-      await browser.close();
-      return res.json({ nom: null, url: null, nb_annonces: 0 });
+    const liens = await page.$$("a.c-pa-link");
+
+    for (const lien of liens) {
+      const nom = (await lien.innerText()).trim();
+      const href = await lien.getAttribute("href");
+
+      if (nom.toLowerCase().includes(nom_agence.toLowerCase())) {
+        // Visite de la page de l'agence
+        await page.goto(href, { timeout: 60000 });
+        await page.waitForTimeout(2000);
+        const contenu = await page.content();
+
+        const match = contenu.match(/Biens en vente\s*\((\d+)\)/);
+        const nb_annonces = match ? parseInt(match[1]) : 0;
+
+        await browser.close();
+        return res.json({
+          nom,
+          url: href,
+          nb_annonces
+        });
+      }
     }
-
-    await page.goto(agence.url, { timeout: 60000 });
-    await page.waitForTimeout(3000);
-    const contenu = await page.content();
-    const match = contenu.match(/Biens en vente\s*\((\d+)\)/);
-    const nb_annonces = match ? parseInt(match[1]) : 0;
 
     await browser.close();
     return res.json({
-      nom: agence.nom,
-      url: agence.url,
-      nb_annonces
+      nom: null,
+      url: null,
+      nb_annonces: 0
     });
-
-  } catch (error) {
-    console.error("❌ Erreur Puppeteer :", error);
-    await browser.close();
-    return res.status(500).json({ error: "Erreur scraping" });
+  } catch (err) {
+    console.error("Erreur scraping:", err);
+    if (browser) await browser.close();
+    return res.status(500).json({ error: "Erreur scraping : " + err.message });
   }
 });
 
 app.get("/", (req, res) => {
-  res.send("✅ Puppeteer API opérationnelle");
+  res.send("✅ API SeLoger Scraper en ligne !");
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log("🚀 Serveur lancé sur le port", PORT);
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+  console.log(`🚀 Serveur lancé sur le port ${port}`);
 });
