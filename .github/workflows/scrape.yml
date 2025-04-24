@@ -25,10 +25,10 @@ jobs:
         with:
           node-version: '18'
 
-      - name: Install dependencies & browsers
-        run: |
-          npm ci
-          npx playwright install --with-deps chromium
+          - name: Install dependencies & browsers
+          run: |
+            npm install
+            npx playwright install --with-deps chromium        
 
       - name: Run scraper and show result
         run: |
