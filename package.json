@@ -1,0 +1,13 @@
+{
+  "name": "seloger-puppeteer",
+  "version": "1.0.0",
+  "description": "Scraper SeLoger avec Puppeteer sur Render",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "puppeteer": "^20.7.4"
+  }
+}
