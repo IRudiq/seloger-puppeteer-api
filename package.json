@@ -1,13 +1,14 @@
 {
-  "name": "seloger-puppeteer",
+  "name": "seloger-puppeteer-api",
   "version": "1.0.0",
-  "description": "Scraper SeLoger avec Puppeteer sur Render",
+  "description": "Scraper SeLoger via Puppeteer et API Express",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "postinstall": "playwright install chromium"
   },
   "dependencies": {
     "express": "^4.18.2",
-    "puppeteer": "^20.7.4"
+    "puppeteer": "^21.3.8"
   }
 }
